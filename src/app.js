@@ -79,7 +79,7 @@ function readBody(req, maxBytes) {
  *          maxBodyBytes?: number, maxNickname?: number, maxContent?: number,
  *          logger?: {info: Function, warn: Function, error: Function}}} options
  */
-function createApp(options) {
+function createRequestHandler(options) {
   const store = options.store;
   const publicDir = path.resolve(options.publicDir);
   const maxBodyBytes = options.maxBodyBytes ?? 8192;
@@ -200,7 +200,7 @@ function createApp(options) {
     res.end(req.method === 'HEAD' ? undefined : body);
   }
 
-  const server = http.createServer((req, res) => {
+  return (req, res) => {
     const startedAt = process.hrtime.bigint();
     let pathname = '/';
     try {
@@ -226,9 +226,12 @@ function createApp(options) {
         res.destroy();
       }
     });
-  });
-
-  return server;
+  };
 }
 
-module.exports = { createApp, MIME_TYPES };
+/** 创建 Node HTTP 服务（本地常驻进程使用）。 */
+function createApp(options) {
+  return http.createServer(createRequestHandler(options));
+}
+
+module.exports = { createApp, createRequestHandler, MIME_TYPES };

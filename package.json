@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "vercel-build": "node -e \"console.log('vercel build: static assets are ready')\""
   }
 }

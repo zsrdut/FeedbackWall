@@ -76,6 +76,32 @@ curl -s -X POST http://localhost:3000/api/messages \
   -d '{"nickname":"小明","content":"你好，留言墙！"}'
 ```
 
+
+## 部署到 Vercel
+
+项目已适配 Vercel Serverless：
+
+- `api/[...path].js` 复用 `src/app.js` 的同一套路由，处理 `/api/health`、`/api/messages`。
+- `public/` 由 Vercel 静态托管，页面无需构建。
+- `vercel.json` 指定无框架预设、`npm run vercel-build`、输出目录 `public`，函数部署在 `hkg1`。
+
+```bash
+vercel link --project feedback-wall
+vercel deploy --prod
+```
+
+本地模拟 Vercel 路由：
+
+```bash
+vercel dev --listen 127.0.0.1:3100
+```
+
+### Vercel 限制
+
+- Vercel Serverless 只有 `/tmp` 可写，函数默认使用 `DATA_DIR=/tmp/feedback-wall`。同一函数实例内的留言可正常读取；冷启动、扩缩容到新实例或实例回收后，历史留言不会保留，也不会跨实例共享。
+- 需要「重启不丢、跨实例共享」时，应把 `src/store.js` 替换为外部数据库/对象存储实现，或改用支持常驻 Node 进程与持久卷的平台。
+- 项目的 Vercel Authentication 策略可能要求登录后才能访问部署 URL；公开演示需在 Vercel 控制台关闭 Vercel Authentication，或为项目绑定已配置的自定义域名。
+
 ## 数据与部署
 
 - 留言保存在 `DATA_DIR/messages.json`（默认 `./data/messages.json`），该文件已被 `.gitignore` 忽略。
@@ -88,13 +114,16 @@ curl -s -X POST http://localhost:3000/api/messages \
 
 ```
 .
-├── server.js            # 启动装配：读取环境变量、初始化存储、监听端口、优雅退出
+├── server.js            # 本地常驻进程启动装配
+├── api/[...path].js     # Vercel Serverless API 入口
+├── vercel.json          # Vercel 构建/路由/区域配置
 ├── src/
-│   ├── app.js           # HTTP 服务：路由、请求体限制、静态资源、错误映射、访问日志
+│   ├── app.js           # HTTP 路由：静态资源、API、错误映射、访问日志
 │   ├── store.js         # JSON 文件存储：加载、倒序读取、原子写入、并发队列
-│   └── validate.js      # 输入校验：trim、Unicode 码点计数、错误码
+│   ├── validate.js      # 输入校验：trim、Unicode 码点计数、错误码
+│   └── vercel.js        # Vercel 运行时装配（/tmp 数据目录）
 ├── public/              # 静态页面（index.html / styles.css / app.js）
-├── test/                # node:test 单元与接口测试
-├── data/                # 运行时数据目录（messages.json 不入库）
-└── docs/                # 需求 Spec、技术设计、交互原型
+├── test/                # node:test 单元、接口与 Vercel handler 测试
+├── data/                # 本地运行时数据目录（messages.json 不入库）
+└── docs/                # 需求 Spec、技术设计、交互原型、Vercel 部署说明
 ```

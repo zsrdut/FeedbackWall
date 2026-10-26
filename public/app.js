@@ -211,7 +211,7 @@
     state.freshId = null;
   }
 
-  function loadMessages() {
+  function loadMessages(extraMessage) {
     renderLoading();
 
     return fetch('/api/messages', {
@@ -225,6 +225,14 @@
       })
       .then(function (data) {
         var messages = data && Array.isArray(data.messages) ? data.messages : [];
+        // Serverless 多实例下 GET 可能落到另一个实例；把本次 POST 返回的留言合并进来，
+        // 保证提交者立即看到自己的留言，同时仍以服务端列表为准。
+        if (extraMessage && extraMessage.id) {
+          var exists = messages.some(function (message) {
+            return message.id === extraMessage.id;
+          });
+          if (!exists) messages = [extraMessage].concat(messages);
+        }
         renderMessages(messages);
       })
       .catch(function () {
@@ -284,7 +292,7 @@
         setFieldError(el.content, el.contentError, '');
         updateCounter();
         showToast('ok', '留言成功', true);
-        return loadMessages();
+        return loadMessages(data && data.message ? data.message : null);
       })
       .catch(function (error) {
         var message = error && error.isHttp ? error.message : '网络异常，请稍后重试';

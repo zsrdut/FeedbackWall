@@ -4,3 +4,4 @@ data/messages.json.tmp-*
 data/messages.corrupt-*.json
 .DS_Store
 npm-debug.log*
+.vercel/
