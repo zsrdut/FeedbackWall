@@ -128,7 +128,7 @@ updated_at: 2026-10-26T16:50:00+08:00
 |------|------|----------|----------|--------|
 | `GET /api/messages` | 新增 | 无参数 | 200 `{ "messages": Message[] }`，最新在前 | 新增，兼容 |
 | `POST /api/messages` | 新增 | JSON `{ "nickname": string, "content": string }` | 201 `{ "message": Message }`；400/413/500 错误体 | 新增，兼容 |
-| `GET /api/health` | 新增 | 无 | 200 `{ "status": "ok", "uptime": number }` | 新增，兼容 |
+| `GET /api/health` | 新增 | 无 | 200 `{ "status": "ok" }` | 新增，兼容 |
 | 其他 `/api/*` | 新增 | — | 404 `{ "error": { "code": "NOT_FOUND", "message": "接口不存在" } }` | 新增，兼容 |
 | `GET /api/messages`（非 GET/POST） | 新增 | — | 405 + `Allow: GET, POST` | 新增，兼容 |
 
