@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>留言墙 · 交互原型</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --ink: #1c2433;
+    --muted: #6b7787;
+    --line: #e3e8f0;
+    --brand: #3b5bfd;
+    --brand-dark: #2f49cf;
+    --ok: #0f9960;
+    --err: #d63b3b;
+    --radius: 14px;
+    --shadow: 0 10px 30px rgba(28, 36, 51, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1000px 400px at 10% -10%, #dfe7ff 0%, transparent 60%),
+      radial-gradient(800px 400px at 100% 0%, #e6f7f1 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { width: min(760px, 100% - 32px); margin: 0 auto; padding: 36px 0 72px; }
+  .proto-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-size: 12px; color: #7a6a2f; background: #fff8e1; border: 1px dashed #e8d28a;
+    border-radius: 10px; padding: 8px 12px; margin-bottom: 20px;
+  }
+  .proto-bar button {
+    border: 0; background: transparent; color: #8a6d1a; font-size: 12px;
+    cursor: pointer; text-decoration: underline; padding: 0;
+  }
+  header.hero { margin-bottom: 22px; }
+  .eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--brand); font-weight: 700; }
+  h1 { font-size: 30px; margin: 6px 0 6px; letter-spacing: -.02em; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  form { padding: 20px; margin-bottom: 26px; }
+  .row { display: grid; gap: 14px; }
+  .field { display: grid; gap: 6px; }
+  label { font-size: 13px; font-weight: 600; color: #2c3648; }
+  label .req { color: var(--err); margin-left: 2px; }
+  input, textarea {
+    width: 100%; font: inherit; font-size: 14px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    background: #fbfcfe; transition: border-color .15s, box-shadow .15s;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, textarea:focus {
+    outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(59, 91, 253, .12); background: #fff;
+  }
+  .meta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .counter { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .counter.warn { color: var(--err); font-weight: 600; }
+  .field-error { font-size: 12px; color: var(--err); min-height: 0; }
+  .actions { display: flex; align-items: center; gap: 12px; }
+  button.primary {
+    font: inherit; font-weight: 600; font-size: 14px; color: #fff; background: var(--brand);
+    border: 0; border-radius: 10px; padding: 10px 22px; cursor: pointer;
+    transition: background .15s, transform .05s;
+  }
+  button.primary:hover:not(:disabled) { background: var(--brand-dark); }
+  button.primary:active:not(:disabled) { transform: translateY(1px); }
+  button.primary:disabled { background: #9aa9ee; cursor: not-allowed; }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px;
+    border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  .toast {
+    display: none; margin-bottom: 14px; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; border: 1px solid;
+  }
+  .toast.show { display: block; }
+  .toast.ok { color: #0b6b45; background: #e9f8f0; border-color: #bfe8d4; }
+  .toast.err { color: #9c2626; background: #fdeeee; border-color: #f3c9c9; }
+
+  .list-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .list-head h2 { font-size: 16px; margin: 0; }
+  .count { font-size: 12px; color: var(--muted); }
+  .list { display: grid; gap: 12px; }
+
+  .msg { padding: 16px 18px; }
+  .msg-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%; flex: 0 0 32px;
+    display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 700;
+    background: linear-gradient(135deg, #6d8bff, #3b5bfd);
+  }
+  .nick { font-weight: 600; font-size: 14px; }
+  .time { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .content { margin: 0; font-size: 14px; color: #333d4f; white-space: pre-wrap; word-break: break-word; }
+  .msg.new { animation: pop .35s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+  .state {
+    text-align: center; padding: 36px 20px; color: var(--muted); font-size: 14px;
+  }
+  .state .icon { font-size: 28px; display: block; margin-bottom: 8px; }
+  .state button {
+    margin-top: 12px; font: inherit; font-size: 13px; color: var(--brand);
+    background: #eef2ff; border: 0; border-radius: 8px; padding: 8px 16px; cursor: pointer;
+  }
+  .skeleton { height: 88px; border-radius: var(--radius); background: linear-gradient(90deg,#eef1f7 25%,#f7f9fc 37%,#eef1f7 63%); background-size: 400% 100%; animation: shimmer 1.2s infinite; }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  @media (max-width: 520px) {
+    .wrap { padding-top: 22px; }
+    h1 { font-size: 24px; }
+    .time { width: 100%; margin-left: 42px; }
+    .msg-top { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="proto-bar">
+    <span>交互原型 · 本地模拟数据，不代表最终实现</span>
+    <button id="reset" type="button">重置为空列表</button>
+  </div>
+
+  <header class="hero">
+    <div class="eyebrow">FEEDBACK WALL</div>
+    <h1>留言墙</h1>
+    <p class="sub">把想说的话留在墙上，最新留言会排在最前面。</p>
+  </header>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <form id="form" class="card" novalidate>
+    <div class="row">
+      <div class="field">
+        <label for="nickname">昵称<span class="req">*</span></label>
+        <input id="nickname" name="nickname" type="text" placeholder="怎么称呼你？" autocomplete="nickname" />
+        <div class="field-error" id="nickname-error"></div>
+      </div>
+      <div class="field">
+        <label for="content">留言内容<span class="req">*</span></label>
+        <textarea id="content" name="content" placeholder="写点什么吧…（最多 200 字）"></textarea>
+        <div class="meta-row">
+          <div class="field-error" id="content-error"></div>
+          <div class="counter" id="counter">0/200</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="submit" type="submit">提交留言</button>
+        <span class="hint">昵称最多 30 字，留言最多 200 字</span>
+      </div>
+    </div>
+  </form>
+
+  <div class="list-head">
+    <h2>全部留言</h2>
+    <span class="count" id="count"></span>
+  </div>
+  <div id="list" class="list" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MAX_NICK = 30;
+  var MAX_CONTENT = 200;
+  var LOADING_MS = 600;
+
+  var state = {
+    messages: [
+      { id: 'demo-3', nickname: '小林', content: '这个留言墙的交互很顺，提交完直接就出现在最上面了。', createdAt: minutesAgo(4) },
+      { id: 'demo-2', nickname: '阿May', content: '建议后面加个删除功能～\n（原型阶段先不实现）', createdAt: minutesAgo(65) },
+      { id: 'demo-1', nickname: '匿名同学', content: '第一条留言，打卡！', createdAt: minutesAgo(60 * 26) }
+    ],
+    submitting: false
+  };
+
+  var el = {
+    form: document.getElementById('form'),
+    nickname: document.getElementById('nickname'),
+    content: document.getElementById('content'),
+    submit: document.getElementById('submit'),
+    nicknameError: document.getElementById('nickname-error'),
+    contentError: document.getElementById('content-error'),
+    counter: document.getElementById('counter'),
+    toast: document.getElementById('toast'),
+    list: document.getElementById('list'),
+    count: document.getElementById('count'),
+    reset: document.getElementById('reset')
+  };
+
+  function minutesAgo(n) { return new Date(Date.now() - n * 60000).toISOString(); }
+  function codePointLength(s) { return Array.from(s).length; }
+
+  function formatTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    function p(v) { return v < 10 ? '0' + v : '' + v; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function showToast(kind, text, autoHide) {
+    el.toast.className = 'toast ' + kind + ' show';
+    el.toast.textContent = text;
+    if (autoHide) {
+      window.clearTimeout(showToast._t);
+      showToast._t = window.setTimeout(function () { el.toast.className = 'toast'; }, 2000);
+    }
+  }
+
+  function hideToast() { el.toast.className = 'toast'; }
+
+  function setFieldError(input, node, message) {
+    node.textContent = message || '';
+    if (message) { input.setAttribute('aria-invalid', 'true'); input.style.borderColor = 'var(--err)'; }
+    else { input.removeAttribute('aria-invalid'); input.style.borderColor = ''; }
+  }
+
+  function validate() {
+    var nickname = el.nickname.value.trim();
+    var content = el.content.value.trim();
+    var firstBad = null;
+    var ok = true;
+
+    setFieldError(el.nickname, el.nicknameError, '');
+    setFieldError(el.content, el.contentError, '');
+
+    if (!nickname) { setFieldError(el.nickname, el.nicknameError, '请输入昵称'); firstBad = el.nickname; ok = false; }
+    else if (codePointLength(nickname) > MAX_NICK) { setFieldError(el.nickname, el.nicknameError, '昵称最多 ' + MAX_NICK + ' 字'); firstBad = el.nickname; ok = false; }
+
+    if (!content) { setFieldError(el.content, el.contentError, '请输入留言内容'); firstBad = firstBad || el.content; ok = false; }
+    else if (codePointLength(content) > MAX_CONTENT) { setFieldError(el.content, el.contentError, '留言内容最多 ' + MAX_CONTENT + ' 字'); firstBad = firstBad || el.content; ok = false; }
+
+    if (firstBad) firstBad.focus();
+    return ok ? { nickname: nickname, content: content } : null;
+  }
+
+  function render() {
+    el.list.textContent = '';
+    var messages = state.messages;
+    el.count.textContent = messages.length ? messages.length + ' 条' : '';
+
+    if (!messages.length) {
+      var empty = document.createElement('div');
+      empty.className = 'card state';
+      var icon = document.createElement('span');
+      icon.className = 'icon';
+      icon.textContent = '💬';
+      var text = document.createElement('div');
+      text.textContent = '还没有留言，来写下第一条吧～';
+      empty.appendChild(icon);
+      empty.appendChild(text);
+      el.list.appendChild(empty);
+      return;
+    }
+
+    messages.forEach(function (m, index) {
+      var card = document.createElement('article');
+      card.className = 'card msg' + (index === 0 && m.__fresh ? ' new' : '');
+
+      var top = document.createElement('div');
+      top.className = 'msg-top';
+
+      var avatar = document.createElement('span');
+      avatar.className = 'avatar';
+      avatar.textContent = Array.from(m.nickname || '?')[0] || '?';
+      avatar.setAttribute('aria-hidden', 'true');
+
+      var nick = document.createElement('span');
+      nick.className = 'nick';
+      nick.textContent = m.nickname;
+
+      var time = document.createElement('time');
+      time.className = 'time';
+      time.dateTime = m.createdAt;
+      time.textContent = formatTime(m.createdAt);
+
+      var content = document.createElement('p');
+      content.className = 'content';
+      content.textContent = m.content;
+
+      top.appendChild(avatar);
+      top.appendChild(nick);
+      top.appendChild(time);
+      card.appendChild(top);
+      card.appendChild(content);
+      el.list.appendChild(card);
+      m.__fresh = false;
+    });
+  }
+
+  function renderLoading() {
+    el.list.textContent = '';
+    for (var i = 0; i < 2; i++) {
+      var s = document.createElement('div');
+      s.className = 'skeleton';
+      el.list.appendChild(s);
+    }
+  }
+
+  function loadMessages() {
+    renderLoading();
+    el.count.textContent = '';
+    return new Promise(function (resolve) {
+      window.setTimeout(function () {
+        state.messages.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+        render();
+        resolve();
+      }, LOADING_MS);
+    });
+  }
+
+  function setSubmitting(on) {
+    state.submitting = on;
+    el.submit.disabled = on;
+    el.submit.setAttribute('aria-busy', on ? 'true' : 'false');
+    if (on) {
+      el.submit.innerHTML = '';
+      var sp = document.createElement('span');
+      sp.className = 'spinner';
+      el.submit.appendChild(sp);
+      el.submit.appendChild(document.createTextNode('提交中…'));
+    } else {
+      el.submit.textContent = '提交留言';
+    }
+  }
+
+  el.content.addEventListener('input', function () {
+    var n = codePointLength(el.content.value);
+    el.counter.textContent = n + '/' + MAX_CONTENT;
+    el.counter.classList.toggle('warn', n > MAX_CONTENT);
+  });
+
+  el.nickname.addEventListener('input', function () {
+    if (el.nicknameError.textContent) setFieldError(el.nickname, el.nicknameError, '');
+  });
+  el.content.addEventListener('input', function () {
+    if (el.contentError.textContent) setFieldError(el.content, el.contentError, '');
+  });
+
+  el.form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (state.submitting) return;
+    hideToast();
+
+    var value = validate();
+    if (!value) return;
+
+    setSubmitting(true);
+    window.setTimeout(function () {
+      // 模拟 POST /api/messages 成功；真实实现由服务端生成 id 与 createdAt
+      state.messages.unshift({
+        id: 'demo-' + Date.now(),
+        nickname: value.nickname,
+        content: value.content,
+        createdAt: new Date().toISOString(),
+        __fresh: true
+      });
+      el.nickname.value = '';
+      el.content.value = '';
+      el.counter.textContent = '0/' + MAX_CONTENT;
+      el.counter.classList.remove('warn');
+      setSubmitting(false);
+      showToast('ok', '留言成功，已刷新列表', true);
+      render();
+    }, LOADING_MS);
+  });
+
+  el.reset.addEventListener('click', function () {
+    state.messages = [];
+    hideToast();
+    render();
+    el.nickname.focus();
+  });
+
+  loadMessages();
+})();
+</script>
+</body>
+</html>
