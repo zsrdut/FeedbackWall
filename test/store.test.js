@@ -87,6 +87,20 @@ test('损坏的数据文件被隔离，服务以空列表启动', async (t) => {
   assert.ok(!files.includes('messages.json'));
 });
 
+test('持久化失败时回滚内存数据并抛出错误', async (t) => {
+  const dir = await tempDir(t);
+  const store = createMessageStore({ dataDir: dir, logger: silentLogger });
+  await store.init();
+
+  // 用同名文件占住数据目录路径，使后续 mkdir/写入必然失败
+  await fsp.rm(dir, { recursive: true, force: true });
+  await fsp.writeFile(dir, 'not-a-directory', 'utf8');
+
+  await assert.rejects(() => store.add({ nickname: '小明', content: '内容' }));
+  assert.equal(store.count(), 0);
+  assert.deepEqual(store.list(), []);
+});
+
 test('结构非法的数据文件同样被隔离', async (t) => {
   const dir = await tempDir(t);
   await fsp.writeFile(path.join(dir, 'messages.json'), JSON.stringify({ version: 1, messages: 'oops' }), 'utf8');
