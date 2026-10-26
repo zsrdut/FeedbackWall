@@ -7,7 +7,8 @@
 
   var state = {
     submitting: false,
-    toastTimer: null
+    toastTimer: null,
+    freshId: null
   };
 
   var el = {
@@ -175,7 +176,8 @@
 
     messages.forEach(function (message, index) {
       var card = document.createElement('article');
-      card.className = 'card msg' + (index === 0 && message.__fresh ? ' new' : '');
+      var isFresh = index === 0 && message.id === state.freshId;
+      card.className = 'card msg' + (isFresh ? ' new' : '');
 
       var top = document.createElement('div');
       top.className = 'msg-top';
@@ -205,6 +207,8 @@
       card.appendChild(content);
       el.list.appendChild(card);
     });
+
+    state.freshId = null;
   }
 
   function loadMessages() {
@@ -265,12 +269,15 @@
       .then(function (response) {
         if (!response.ok) {
           return readErrorMessage(response).then(function (message) {
-            throw new Error(message);
+            var error = new Error(message);
+            error.isHttp = true;
+            throw error;
           });
         }
         return response.json();
       })
-      .then(function () {
+      .then(function (data) {
+        state.freshId = data && data.message && data.message.id ? data.message.id : null;
         el.nickname.value = '';
         el.content.value = '';
         setFieldError(el.nickname, el.nicknameError, '');
@@ -280,7 +287,8 @@
         return loadMessages();
       })
       .catch(function (error) {
-        setFormError('提交失败：' + (error && error.message ? error.message : '网络异常，请稍后重试'));
+        var message = error && error.isHttp ? error.message : '网络异常，请稍后重试';
+        setFormError('提交失败：' + message);
       })
       .then(function () {
         setSubmitting(false);
