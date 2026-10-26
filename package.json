@@ -1,0 +1,13 @@
+{
+  "name": "feedback-wall",
+  "version": "1.0.0",
+  "private": true,
+  "description": "留言墙 Demo：单进程 Node 服务同时提供静态页面与 /api/messages 接口",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
